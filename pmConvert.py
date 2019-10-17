@@ -5,11 +5,11 @@ import numpy as np
 import pretty_midi
 #import librosa
 
-def get_piano_roll(midifile):
+def get_piano_roll(midifile,fs):
     #midi_data = pretty_midi.PrettyMIDI('test.midi')
     midi_pretty_format = pretty_midi.PrettyMIDI(midifile)
     piano_midi = midi_pretty_format.instruments[0] # Get the piano channels
-    piano_roll = piano_midi.get_piano_roll(fs=100)
+    piano_roll = piano_midi.get_piano_roll(fs)
     print(piano_roll.shape)
     return piano_roll
 
@@ -63,8 +63,8 @@ def piano_roll_to_pretty_midi(piano_roll, fs=1, program=0):
             prev_velocities[note] = 0
     pm.instruments.append(instrument)
     return pm
-    
-pr = get_piano_roll("test.midi")
-prClipped = pr[:,:]#1500]
-pm = piano_roll_to_pretty_midi(prClipped, fs=100, program=50)
-pm.write("strings.midi")
+fs=25    
+pr = get_piano_roll("test.midi",fs)
+#prClipped = pr[:,:]#1500]
+pm = piano_roll_to_pretty_midi(pr, fs=fs, program=2)
+pm.write("piano.midi")
