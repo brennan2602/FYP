@@ -10,16 +10,17 @@ import numpy as np
 def generateFromData(lines):
     i=0
     outString=""
-    while i<=500:
+    while i<=1500:
         num = random.randint(1, len(lines))
-        line=lines[i]
+        print(str(len(lines))+ " - "+str(num))
+        line=lines[num-1]
         numSample= random.randint(1,20)
         for j in range(0, numSample):
             if i<=500:
                 outString=outString+line
             i+=1
 
-    print(outString)
+    #print(outString)
     return outString
 
 def piano_roll_to_pretty_midi(piano_roll, fs=1, program=0):
@@ -74,50 +75,50 @@ def piano_roll_to_pretty_midi(piano_roll, fs=1, program=0):
     return pm
 
 def decode(test):
-	test=test[:-1]
-	output=test.split("\n")
-	#print(output)
-	res = len(output)
-	arr=np.zeros((128,res))
-	print(arr.shape)
-	timeindex=0
-	for x in output:
-		newx=x.replace(")(", "-")
-		newx=newx.replace("(","")
-		newx=newx.replace(")","")
-		noteGroup = newx.split("-")
-		for n in noteGroup:
-			if n != "#":
-				#print(n)
-				s=len(n.split(","))
-				#print(s)
-				if s==2:
-					note,velocity = n.split(",")
-					if velocity.count("#")>0 or velocity.count('.')>1:
-						velocity=0
-						note = 0
-					elif note.count("#")>0 or note.count('.')>1:
-						note=0
-						velocity = 0
-					note=float(note)
+    test=test[:-1]
+    output=test.split("\n")
+    #print(output)
+    res = len(output)
+    arr=np.zeros((128,res))
+    #print(arr.shape)
+    timeindex=0
+    for x in output:
+        newx=x.replace(")(", "-")
+        newx=newx.replace("(","")
+        newx=newx.replace(")","")
+        noteGroup = newx.split("-")
+        for n in noteGroup:
+            if n != "#":
+                #print(n)
+                s=len(n.split(","))
+                #print(s)
+                if s==2:
+                    note,velocity = n.split(",")
+                    if velocity.count("#")>0 or velocity.count('.')>1:
+                        velocity=0
+                        note = 0
+                    elif note.count("#")>0 or note.count('.')>1:
+                        note=0
+                        velocity = 0
+                    note=float(note)
 
-					if int(note)>126:
-						note =0
-						velocity = 0
-					if velocity=="":
-						velocity=0
-						note = 0
-					if int(float(velocity))>126:
-						velocity=0
-						note = 0
-					arr[int(note),timeindex]=velocity
-					print(note,velocity)
-		timeindex=timeindex+1
-	#arr=arr.T
-	return arr
+                    if int(note)>126:
+                        note =0
+                        velocity = 0
+                    if velocity=="":
+                        velocity=0
+                        note = 0
+                    if int(float(velocity))>126:
+                        velocity=0
+                        note = 0
+                    arr[int(note),timeindex]=velocity
+                    #print(note,velocity)
+        timeindex=timeindex+1
+    #arr=arr.T
+    return arr
 
 files=glob.glob(r"C:\Users\brenn\PycharmProjects\FYP\venv\encodedFiles\*.txt")
-print(files)
+#print(files)
 for f in files:
     x= f.split("\\")[-1]
     name=x.split(".txt")[0]
@@ -125,7 +126,7 @@ for f in files:
     #print(x)
     with open(f) as text:
         lines = text.readlines()
-        #print(lines)
+        print(lines)
     generated = generateFromData(lines)
     decoded = decode(generated)
     fs = 20
