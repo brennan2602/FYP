@@ -3,26 +3,22 @@ import random
 import pretty_midi
 import numpy as np
 
-# with open(r'C:\Users\brenn\PycharmProjects\FYP\venv\generatedPureRand.txt') as f: #change to some training data
-#     lines = f.readlines()
-#     print(lines)
 
 def generateFromData(lines):
     i=0
     outString=""
-    while i<=1500:
-        num = random.randint(1, len(lines))
-        print(str(len(lines))+ " - "+str(num))
-        line=lines[num-1]
-        numSample= random.randint(1,20)
+    while i<=1500: #will generate a song that is 1500 samples long
+        num = random.randint(1, len(lines)) #picking a random number between 1 and the length of the encoded data file
+        #print(str(len(lines))+ " - "+str(num))
+        line=lines[num-1] # getting a random encoded line from the dataset
+        numSample= random.randint(1,20) # deciding how long to hold on a sample for (random between 1 and 20)
         for j in range(0, numSample):
-            if i<=500:
+            if i<=1500: #another limit to ensure song is under 1500 samples long
                 outString=outString+line
             i+=1
-
-    #print(outString)
     return outString
 
+#taken from prettyMidi docs
 def piano_roll_to_pretty_midi(piano_roll, fs=1, program=0):
     '''Convert a Piano Roll array into a PrettyMidi object
      with a single instrument.
@@ -75,60 +71,61 @@ def piano_roll_to_pretty_midi(piano_roll, fs=1, program=0):
     return pm
 
 def decode(test):
-    test=test[:-1]
-    output=test.split("\n")
-    #print(output)
-    res = len(output)
-    arr=np.zeros((128,res))
-    #print(arr.shape)
+    test=test[:-1] #takes in the endoded data and looks at all lines except the last line (always blank)
+    output=test.split("\n") #splits on newline character
+    res = len(output) # this is how many samples long the song will be
+    arr=np.zeros((128,res)) #initialising a piano roll array with zeros for this length
     timeindex=0
     for x in output:
-        newx=x.replace(")(", "-")
-        newx=newx.replace("(","")
-        newx=newx.replace(")","")
-        noteGroup = newx.split("-")
+        newx=x.replace(")(", "-") #this is the seperator between different note/velocity pairs in the same sample
+        newx=newx.replace("(","") #removing the outer bracket
+        newx=newx.replace(")","") #removing the other outer bracket
+        noteGroup = newx.split("-") # splitting into separate note/velocity pairs
         for n in noteGroup:
             if n != "#":
-                #print(n)
-                s=len(n.split(","))
-                #print(s)
-                if s==2:
-                    note,velocity = n.split(",")
-                    if velocity.count("#")>0 or velocity.count('.')>1:
+                #
+                # This error checking is likely redundant given the encoded file isn't coming from a ML model
+                # The fact generated file is coming from sampled encoded training file should mean there are no issues
+                # Checks are just kept here to maintain consistency across scripts and as a precaution
+                #
+                s=len(n.split(",")) #this is checking to make sure there aren't more commas then expected
+                if s==2: # if there is only one  comma then note/velocity follows expected format
+                    note,velocity = n.split(",") # splitting into note/velocity
+                    if velocity.count("#")>0 or velocity.count('.')>1: # these are flaws in generation so replace with 0
                         velocity=0
                         note = 0
-                    elif note.count("#")>0 or note.count('.')>1:
+                    elif note.count("#")>0 or note.count('.')>1: # these are flaws in generation so replace with 0
                         note=0
                         velocity = 0
-                    note=float(note)
+                    note=float(note) #casting to avoid an error
 
-                    if int(note)>126:
+                    if int(note)>126: #casting into int if over 126 it isnt a valid midi note so replace with 0
                         note =0
                         velocity = 0
-                    if velocity=="":
+                    if velocity=="": #checking for a common error when encoding velocity if found replace with 0
                         velocity=0
                         note = 0
-                    if int(float(velocity))>126:
+                    if int(float(velocity))>126: #casting to int if over 126 it isnt a valid midi vel so replace with 0
                         velocity=0
                         note = 0
-                    arr[int(note),timeindex]=velocity
-                    #print(note,velocity)
-        timeindex=timeindex+1
+                    arr[int(note),timeindex]=velocity # updating point in piano roll with velocity
+        timeindex=timeindex+1 #incrementing through to next time index (sample) in song
     #arr=arr.T
     return arr
 
+#going through directory of encoded datasets
 files=glob.glob(r"C:\Users\brenn\PycharmProjects\FYP\venv\encodedFiles\*.txt")
-#print(files)
+
 for f in files:
     x= f.split("\\")[-1]
     name=x.split(".txt")[0]
     print(name)
-    #print(x)
     with open(f) as text:
         lines = text.readlines()
-        print(lines)
-    generated = generateFromData(lines)
-    decoded = decode(generated)
+        #print(lines)
+    #lines is an encoded training file
+    generated = generateFromData(lines) #this is where the random sampling/generation is done
+    decoded = decode(generated) #decoding random generation
     fs = 20
-    pm = piano_roll_to_pretty_midi(decoded, fs=fs, program=2)
+    pm = piano_roll_to_pretty_midi(decoded, fs=fs, program=2) #converting to midi
     pm.write("GenWith"+name+".midi")
